@@ -318,23 +318,100 @@ WHERE NOT EXISTS (
 
 -- Q1. Find the workers whose salary is greater than the average salary of all workers in their department.
 
+SELECT * FROM WORKER W1 WHERE SALARY > (
+    SELECT AVG( W2.SALARY)
+    FROM WORKER W2
+    WHERE W1.DEPARTMENT = W2.DEPARTMENT
+);
+
 -- Q2. Retrieve the names of workers who are the only ones in their department.
+
+SELECT FIRST_NAME FROM WORKER W1 WHERE (
+    SELECT COUNT(*) 
+    FROM WORKER W2
+    WHERE W1.DEPARTMENT = W2.DEPARTMENT
+) = 1;
 
 -- Q3. Find the worker details whose salary is the second highest in their department.
 
+SELECT * FROM WORKER W1
+WHERE 1 = (
+    SELECT COUNT(DISTINCT W2.SALARY)
+    FROM WORKER W2
+    WHERE W1.DEPARTMENT = W2.DEPARTMENT
+    AND W2.SALARY < W1.SALARY
+);
+
 -- Q4. Identify the workers who have received the highest bonus in their department.
+
+SELECT W1.* ,B1.* FROM WORKER W1 INNER JOIN BONUS B1
+ON W1.WORKER_ID = B1.WORKER_REF_ID
+WHERE B1.BOUNS_AMOUNT = (
+    SELECT MAX(B2.BOUNS_AMOUNT)
+    FROM BONUS B2 INNER JOIN WORKER W2
+    ON W2.WORKER_ID = B2.WORKER_REF_ID
+    WHERE W2.DEPARTMENT = W1.DEPARTMENT
+);
 
 -- Q5. List the workers whose joining date is the most recent in their department.
 
+SELECT W1.* FROM WORKER W1
+WHERE JOINING_DATE = (
+    SELECT MAX(W2.JOINING_DATE)
+    FROM WORKER W2
+    WHERE W1.DEPARTMENT = W2.DEPARTMENT
+);
+
 -- Q6. Find the workers who have the second highest bonus amount across all departments.
+
+SELECT W1.* , B1.* FROM WORKER W1 INNER JOIN BONUS B1
+ON W1.WORKER_ID = B1.WORKER_REF_ID
+WHERE BOUNS_AMOUNT = (
+    SELECT MAX(B2.BOUNS_AMOUNT)
+    FROM BONUS B2
+    WHERE B2.BOUNS_AMOUNT < (
+        SELECT MAX(BOUNS_AMOUNT) FROM BONUS 
+    )
+);
 
 -- Q7. Retrieve the names of workers whose bonus is greater than the average bonus in their department.
 
+
+SELECT W1.* ,B1.* FROM WORKER W1 INNER JOIN BONUS B1
+ON W1.WORKER_ID = B1.WORKER_REF_ID
+WHERE B1.BOUNS_AMOUNT > (
+    SELECT AVG( DISTINCT B2.BOUNS_AMOUNT)
+    FROM BONUS B2 INNER JOIN WORKER W2
+    ON W2.WORKER_ID = B2.WORKER_REF_ID
+    WHERE W1.DEPARTMENT = W2.DEPARTMENT
+);
+
 -- Q8. Find the workers whose titles have been updated most recently in their department.
+
+SELECT W1.*,T1.* FROM WORKER W1 INNER JOIN TITLE T1
+ON W1.WORKER_ID = T1.WORKER_REF_ID WHERE T1.AFFECTED_FROM = (
+    SELECT MAX(AFFECTED_FROM) FROM TITLE T2
+    INNER JOIN WORKER W2 
+    ON W2.WORKER_ID = T2.WORKER_REF_ID 
+    WHERE W1.DEPARTMENT = W2.DEPARTMENT
+);
 
 -- Q9. List the workers who have a salary greater than the average salary of all workers who joined before them.
 
+SELECT * FROM WORKER W1
+WHERE W1.SALARY > (
+    SELECT AVG(W2.SALARY) FROM WORKER W2
+    WHERE W2.JOINING_DATE < W1.JOINING_DATE
+)
+
 -- Q10. Identify the workers who have the maximum salary but are not managers.
+
+SELECT W1.* ,T1.* FROM WORKER W1
+INNER JOIN TITLE T1 ON W1.WORKER_ID = T1.WORKER_REF_ID
+WHERE W1.SALARY = (
+    SELECT MAX(W2.SALARY) FROM WORKER W2
+    WHERE T1.WORKER_TITLE != "MANAGER"
+);
 
 
 
